@@ -14,6 +14,6 @@ namespace smarthomeAPI.Models
         public DateTime? VerifiedAt { get; set; }
         public string? PasswordResetToken { get; set; }
         public DateTime? ResetTokenExpires { get; set; }
-        public List<Enviroment> Enviroments { get; set; }
+        public List<EnvironmentType> Environments { get; set; }
     }
 }

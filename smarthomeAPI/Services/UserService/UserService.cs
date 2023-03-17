@@ -1,19 +1,14 @@
-﻿using Azure.Core.GeoJson;
-using Microsoft.AspNetCore.Authorization;
+﻿
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
-using Org.BouncyCastle.Bcpg;
-using smarthomeAPI.Migrations;
-using smarthomeAPI.Models;
 using System.Data;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
-using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Security.Principal;
 using System.Text;
+
 
 namespace smarthomeAPI.Services.UserService
 {
@@ -130,129 +125,44 @@ namespace smarthomeAPI.Services.UserService
             return Ok("Password reset");
         }
 
-        public async Task<IActionResult> CreateEnviroment(EnviromentRegisterRequest request)
+
+        public async Task<IActionResult> DeleteUser(EnvironmentRegisterRequest request)
         {
-            // check that the token has a user ID
-            string temp = GetClaim("UserId");
-            if (temp == string.Empty)
-            {
-                return BadRequest("string is empty");
-            }
-
-            int userId = Int32.Parse(temp);
-
-            //check that the parent environment exists
-            if  (!(request.ParentEnviromentID == 0) & _context.Enviroments.FirstOrDefault(e => e.EnviromentId == request.ParentEnviromentID && e.UserId == userId) is null)
-            {
-                return BadRequest("Parent enviroment does not exist");
-            }
-
-            //check that the environment does not allready exist.
-            if (!(_context.Enviroments.FirstOrDefault(e => 
-            e.ParentEnviromentID == request.ParentEnviromentID & 
-            e.EnviromentName == request.EnviromentName &
-            e.UserId == userId) is null))
-            {
-                return BadRequest("Enviroment allready exists");
-            };
-
-            var enviroment = new Enviroment
-            {
-                UserId = userId,
-                ParentEnviromentID = request.ParentEnviromentID,
-                EnviromentName = request.EnviromentName
-            };
-
-            _context.Enviroments.Add(enviroment);
-            await _context.SaveChangesAsync();
-
-            return Ok("Enviroment succesfully created");
-        }
-
-        public async Task<IActionResult> DeleteEnviroment(EnviromentDeleteRequest request)
-        {
-
-            string temp = GetClaim("UserId");
-            if (temp == string.Empty)
-            {
-                return BadRequest("string is empty");
-            }
-
-
-            Enviroment? enviroment = _context.Enviroments.FirstOrDefault(e => e.EnviromentId == request.EnviromentId && e.UserId == Int32.Parse(temp));
-            if (enviroment is null)
-            {
-                return BadRequest("Enviroment does not exist");
-            }
-            _context.Enviroments.Remove(enviroment);
+            var Environment = _context.Environments.First();
+            _context.Environments.Remove(Environment);
 
             await _context.SaveChangesAsync();
 
-            return Ok("Enviroment succesfully deleted");
+            return Ok("Environment succesfully deleted");
         }
 
-        public async Task<IActionResult> DeleteUser(EnviromentRegisterRequest request)
-        {
-            var enviroment = _context.Enviroments.First();
-            _context.Enviroments.Remove(enviroment);
-
-            await _context.SaveChangesAsync();
-
-            return Ok("Enviroment succesfully deleted");
-        }
-
-        public List<Enviroment> GetAllValues()
+        public List<EnvironmentType> GetAllValues()
         {
             using (var context = _context)
             {
-                var Envs = context.Enviroments.ToList();
+                var Envs = context.Environments.ToList();
                 return Envs;
             }
         }
-        public IActionResult GetEnvToken(string envPath)
+
+        public string GetTestvalues()
         {
-            string claim = GetClaim("UserId");
-            if (claim == string.Empty)
-            {
-                return BadRequest("AcessDenied");
-            }
-            int userId = Int32.Parse(claim);
+            return string.Join("\n",_context.RawDatas.Where(e => e.EnvironmentID == 1).Select(d =>
+            string.Format(
+                d.LoggedTime.ToString() + "," +
+                d.accelerometer_x.ToString())).ToArray());
 
-            String[] pathList = envPath.Split('/');
-            int envId = 0;
-
-            foreach (string name in pathList)
-            {
-                Enviroment? temp = _context.Enviroments.FirstOrDefault(e => 
-                e.EnviromentName == name && 
-                e.UserId == userId && 
-                e.ParentEnviromentID == envId);
-                if (temp == null)
-                {
-                    return BadRequest("Environment does not exist");
-                }
-                envId = temp.EnviromentId;
-            }
-            string token = CreateEnvWriteToken(envId.ToString());
-            return Ok(token);
-        }
-
-
-        public List<String> GetEnvTokens()
-        {
-            string userId = GetClaim("UserId");
-            if (userId == string.Empty)
-            {
-                return new List<string>();
-            }
-            int iUserId = Int32.Parse(userId);
-            return _context.Enviroments.Where(e => e.UserId == iUserId).Select(y=>y.EnviromentName).ToList();
         }
 
         public IActionResult Upload(RawDataWriteRequest request)
         {
             string envId = GetClaim("EnvId");
             if (envId == string.Empty)
+            {
+                return BadRequest("Access denied");
+            }
+            string userId = GetClaim("EnvUserId");
+            if (userId == string.Empty)
             {
                 return BadRequest("Access denied");
             }
@@ -274,18 +184,19 @@ namespace smarthomeAPI.Services.UserService
                 provider.NumberDecimalSeparator = ".";
 
                 dt.Rows[dt.Rows.Count - 1][0] = Int32.Parse(envId);
-                dt.Rows[dt.Rows.Count - 1][1] = DateTime.Now;
-                dt.Rows[dt.Rows.Count - 1][2] = DateTime.Parse(cell[0]);
-                dt.Rows[dt.Rows.Count - 1][3] = cell[1];
-                dt.Rows[dt.Rows.Count - 1][4] = Convert.ToDouble(cell[2], provider);
-                dt.Rows[dt.Rows.Count - 1][5] = Convert.ToDouble(cell[3], provider);
-                dt.Rows[dt.Rows.Count - 1][6] = Convert.ToDouble(cell[4], provider);
-                dt.Rows[dt.Rows.Count - 1][7] = Convert.ToDouble(cell[5], provider);
-                dt.Rows[dt.Rows.Count - 1][8] = Convert.ToDouble(cell[6], provider);
-                dt.Rows[dt.Rows.Count - 1][9] = Convert.ToDouble(cell[7], provider);
-                dt.Rows[dt.Rows.Count - 1][10] = Convert.ToDouble(cell[8], provider);
-                dt.Rows[dt.Rows.Count - 1][11] = Convert.ToDouble(cell[9], provider);
-                dt.Rows[dt.Rows.Count - 1][12] = Convert.ToDouble(cell[10], provider);
+                dt.Rows[dt.Rows.Count - 1][1] = Int32.Parse(userId);
+                dt.Rows[dt.Rows.Count - 1][2] = DateTime.Now;
+                dt.Rows[dt.Rows.Count - 1][3] = DateTime.Parse(cell[0]);
+                dt.Rows[dt.Rows.Count - 1][4] = cell[1];
+                dt.Rows[dt.Rows.Count - 1][5] = Convert.ToDouble(cell[2], provider);
+                dt.Rows[dt.Rows.Count - 1][6] = Convert.ToDouble(cell[3], provider);
+                dt.Rows[dt.Rows.Count - 1][7] = Convert.ToDouble(cell[4], provider);
+                dt.Rows[dt.Rows.Count - 1][8] = Convert.ToDouble(cell[5], provider);
+                dt.Rows[dt.Rows.Count - 1][9] = Convert.ToDouble(cell[6], provider);
+                dt.Rows[dt.Rows.Count - 1][10] = Convert.ToDouble(cell[7], provider);
+                dt.Rows[dt.Rows.Count - 1][11] = Convert.ToDouble(cell[8], provider);
+                dt.Rows[dt.Rows.Count - 1][12] = Convert.ToDouble(cell[9], provider);
+                dt.Rows[dt.Rows.Count - 1][13] = Convert.ToDouble(cell[10], provider);
             }
 
             using (SqlConnection con = new SqlConnection(_configuration.GetSection("sqlPath").Value))
@@ -294,9 +205,13 @@ namespace smarthomeAPI.Services.UserService
                 {
                     bulkCopy.DestinationTableName = "dbo.RawDatas";
 
-                    SqlBulkCopyColumnMapping EnviromentId =
-                    new SqlBulkCopyColumnMapping("EnviromentId", "EnviromentID");
-                    bulkCopy.ColumnMappings.Add(EnviromentId);
+                    SqlBulkCopyColumnMapping EnvironmentID =
+                    new SqlBulkCopyColumnMapping("EnvironmentID", "EnvironmentID");
+                    bulkCopy.ColumnMappings.Add(EnvironmentID);
+
+                    SqlBulkCopyColumnMapping UserID =
+                    new SqlBulkCopyColumnMapping("UserID", "UserID");
+                    bulkCopy.ColumnMappings.Add(UserID);
 
                     SqlBulkCopyColumnMapping LoggedTime =
                     new SqlBulkCopyColumnMapping("LoggedTime", "LoggedTime");
@@ -358,20 +273,19 @@ namespace smarthomeAPI.Services.UserService
 
         private void AddColumnsToDataTable(DataTable newData)
         {
-            /*
-            DataColumn Id = new DataColumn();
-            Id.ColumnName = "Id";
-            Id.DataType = System.Type.GetType("System.Int32");
-            Id.AllowDBNull = false;
-            Id.Unique = true;
-            newData.Columns.Add(Id);
-            */
-            DataColumn EnviromentID = new DataColumn();
-            EnviromentID.ColumnName = "EnviromentID";
-            EnviromentID.DataType = System.Type.GetType("System.Int32");
-            EnviromentID.AllowDBNull = true;
-            EnviromentID.Unique = false;
-            newData.Columns.Add(EnviromentID);
+            DataColumn EnvironmentID = new DataColumn();
+            EnvironmentID.ColumnName = "EnvironmentID";
+            EnvironmentID.DataType = System.Type.GetType("System.Int32");
+            EnvironmentID.AllowDBNull = true;
+            EnvironmentID.Unique = false;
+            newData.Columns.Add(EnvironmentID);
+
+            DataColumn UserID = new DataColumn();
+            UserID.ColumnName = "UserID";
+            UserID.DataType = System.Type.GetType("System.Int32");
+            UserID.AllowDBNull = true;
+            UserID.Unique = false;
+            newData.Columns.Add(UserID);
 
             DataColumn UploadTime = new DataColumn();
             UploadTime.ColumnName = "UploadTime";
@@ -518,27 +432,6 @@ namespace smarthomeAPI.Services.UserService
             return jwt;
         }
 
-        private string CreateEnvWriteToken(string env)
-        {
-            List<Claim> claims = new List<Claim>
-            {
-                new Claim("EnvId", env)
-            };
-
-            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
-                _configuration.GetSection("AppSettings:Token").Value));
-
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
-
-            var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: creds);
-
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-
-            return jwt;
-        }
 
         private string GetClaim(string claimName)
         {

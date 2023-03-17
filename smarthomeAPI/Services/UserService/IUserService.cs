@@ -15,17 +15,10 @@ namespace smarthomeAPI.Services.UserService
 
         Task<IActionResult> ResetPassword(UserPasswordResetRequest request);
 
-        Task<IActionResult> CreateEnviroment(EnviromentRegisterRequest request);
+        Task<IActionResult> DeleteUser(EnvironmentRegisterRequest request);
 
-        Task<IActionResult> DeleteEnviroment(EnviromentDeleteRequest request);
-
-        Task<IActionResult> DeleteUser(EnviromentRegisterRequest request);
-
-        List<Enviroment> GetAllValues();
         IActionResult Upload(RawDataWriteRequest request);
 
-        IActionResult GetEnvToken(string envpath);
-
-        List<String> GetEnvTokens();
+        string GetTestvalues();
     }
 }

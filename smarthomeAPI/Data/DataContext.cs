@@ -23,6 +23,6 @@ namespace smarthomeAPI.Data
 
         public DbSet<User> Users => Set<User>();
         public DbSet<RawData> RawDatas => Set<RawData>();
-        public DbSet<Enviroment> Enviroments => Set<Enviroment>();
+        public DbSet<EnvironmentType> Environments => Set<EnvironmentType>();
     }
 }

@@ -53,20 +53,8 @@ namespace smarthomeAPI.Controllers
             return _userService.ResetPassword(request);
         }
 
-        [HttpPost("Create-enviroment")]
-        public Task<IActionResult> CreateEnviroment(EnviromentRegisterRequest request)
-        {
-            return _userService.CreateEnviroment(request);
-        }
-
-        [HttpPost("Delete-enviroment")]
-        public Task<IActionResult> DeleteEnviroment(EnviromentDeleteRequest request)
-        {
-            return _userService.DeleteEnviroment(request);
-        }
-
-        [HttpPost("Delete-user")]
-        public Task<IActionResult> DeleteUser(EnviromentRegisterRequest request)
+        [HttpDelete("users")]
+        public Task<IActionResult> DeleteUser(EnvironmentRegisterRequest request)
         {
             return _userService.DeleteUser(request);
         }
@@ -77,20 +65,11 @@ namespace smarthomeAPI.Controllers
             return _userService.Upload(request);
         }
 
-        [HttpGet("Get-all-enviroments")]
-        public List<Enviroment> GetAllValues()
+        [AllowAnonymous]
+        [HttpGet("test")]
+        public string GetTestvalues()
         {
-            return _userService.GetAllValues();
-        }
-        [HttpPost("get-envToken")]
-        public IActionResult GetEnvToken(string envPath)
-        {
-            return _userService.GetEnvToken(envPath);
-        }
-        [HttpGet("get-enviroments")]
-        public List<String> GetEnvTokens()
-        {
-            return _userService.GetEnvTokens();
+            return _userService.GetTestvalues();
         }
     }
 }

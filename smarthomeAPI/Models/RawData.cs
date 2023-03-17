@@ -2,12 +2,13 @@
 
 namespace smarthomeAPI.Models
 {
-    [Index(nameof(EnviromentID), nameof(LoggedTime),nameof(DeviceName))]
+    [Index(nameof(EnvironmentID), nameof(LoggedTime),nameof(DeviceName))]
     public class RawData
     {
         public int Id { get; set; }
-        public int EnviromentID { get; set; }
-        public Enviroment Enviroment { get; set; }
+        public int EnvironmentID { get; set; }
+        public int UserID { get; set; }
+        public EnvironmentType Environment { get; set; }
         public DateTime UploadTime { get; set; }
         public DateTime LoggedTime { get; set; }
         public string DeviceName { get; set; }

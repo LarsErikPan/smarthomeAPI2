@@ -22,30 +22,33 @@ namespace smarthomeAPI.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("smarthomeAPI.Models.Enviroment", b =>
+            modelBuilder.Entity("smarthomeAPI.Models.EnvironmentType", b =>
                 {
-                    b.Property<int>("EnviromentId")
+                    b.Property<int>("EnvironmentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EnviromentId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EnvironmentId"));
 
-                    b.Property<string>("EnviromentName")
+                    b.Property<int>("Depth")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EnvironmentName")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<int>("ParentEnviromentID")
+                    b.Property<int>("ParentEnvironmentID")
                         .HasColumnType("int");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.HasKey("EnviromentId");
+                    b.HasKey("EnvironmentId");
 
-                    b.HasIndex("UserId", "ParentEnviromentID");
+                    b.HasIndex("UserId", "ParentEnvironmentID");
 
-                    b.ToTable("Enviroments");
+                    b.ToTable("Environments");
                 });
 
             modelBuilder.Entity("smarthomeAPI.Models.RawData", b =>
@@ -60,7 +63,7 @@ namespace smarthomeAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("EnviromentID")
+                    b.Property<int>("EnvironmentID")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("LoggedTime")
@@ -68,6 +71,9 @@ namespace smarthomeAPI.Migrations
 
                     b.Property<DateTime>("UploadTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("UserID")
+                        .HasColumnType("int");
 
                     b.Property<float>("accelerometer_x")
                         .HasColumnType("real");
@@ -98,7 +104,7 @@ namespace smarthomeAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EnviromentID", "LoggedTime", "DeviceName");
+                    b.HasIndex("EnvironmentID", "LoggedTime", "DeviceName");
 
                     b.ToTable("RawDatas");
                 });
@@ -140,10 +146,10 @@ namespace smarthomeAPI.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("smarthomeAPI.Models.Enviroment", b =>
+            modelBuilder.Entity("smarthomeAPI.Models.EnvironmentType", b =>
                 {
                     b.HasOne("smarthomeAPI.Models.User", "User")
-                        .WithMany("Enviroments")
+                        .WithMany("Environments")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -153,23 +159,23 @@ namespace smarthomeAPI.Migrations
 
             modelBuilder.Entity("smarthomeAPI.Models.RawData", b =>
                 {
-                    b.HasOne("smarthomeAPI.Models.Enviroment", "Enviroment")
+                    b.HasOne("smarthomeAPI.Models.EnvironmentType", "Environment")
                         .WithMany("RawDatas")
-                        .HasForeignKey("EnviromentID")
+                        .HasForeignKey("EnvironmentID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Enviroment");
+                    b.Navigation("Environment");
                 });
 
-            modelBuilder.Entity("smarthomeAPI.Models.Enviroment", b =>
+            modelBuilder.Entity("smarthomeAPI.Models.EnvironmentType", b =>
                 {
                     b.Navigation("RawDatas");
                 });
 
             modelBuilder.Entity("smarthomeAPI.Models.User", b =>
                 {
-                    b.Navigation("Enviroments");
+                    b.Navigation("Environments");
                 });
 #pragma warning restore 612, 618
         }

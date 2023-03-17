@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using smarthomeAPI.Services.UserService;
+using smarthomeAPI.Services.EnvironmentService;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text;
 
@@ -42,6 +43,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("EmployeeOnly", policy => policy.RequireClaim("EmployeeNumber"));
 });
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IEnvironmentService, EnvironmentService>();
 builder.Services.AddHttpContextAccessor();
 
 
@@ -57,19 +59,22 @@ if (app.Environment.IsDevelopment())
 }
 
 
+
 app.UseCors(x => x
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .SetIsOriginAllowed(origin => true) // allow any origin
-                .AllowCredentials());
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .SetIsOriginAllowed(origin => true) // allow any origin
+            .AllowCredentials());
+
 
 app.UseAuthentication();
 
-//app.Urls.Add("http://" + "192.168.10.123" + ":5000");
+app.Urls.Add("http://" + "192.168.10.164" + ":5000");
+//app.Urls.Add("http://" + "192.168.10.164" + ":5001");
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+app.UseAuthorization(); 
 
 app.MapControllers();
 
