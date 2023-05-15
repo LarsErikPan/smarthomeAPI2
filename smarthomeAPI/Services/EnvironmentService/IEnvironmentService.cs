@@ -11,7 +11,7 @@ namespace smarthomeAPI.Services.EnvironmentService
 
         Task<IActionResult> DeleteEnvironment(EnvironmentDeleteRequest request);
 
-        IActionResult GetEnvToken(string envpath);
+        IActionResult GetEnvToken(int envID);
 
         List<EnvironmentType> GetEnvStrings();
 

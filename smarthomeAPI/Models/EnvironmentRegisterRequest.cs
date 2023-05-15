@@ -4,7 +4,7 @@ namespace smarthomeAPI.Models
 {
     public class EnvironmentRegisterRequest
     {
-        public string? ParentEnvironmentPath { get; set; }
+        public int ParentEnvironmentId {get; set;}
         [Required]
         public string EnvironmentName { get; set; } = string.Empty;
     }

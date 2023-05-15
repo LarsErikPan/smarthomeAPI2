@@ -8,7 +8,7 @@ namespace smarthomeAPI.Models
         public int Id { get; set; }
         public int EnvironmentID { get; set; }
         public int UserID { get; set; }
-        public EnvironmentType Environment { get; set; }
+        public virtual EnvironmentType Environment { get; set; }
         public DateTime UploadTime { get; set; }
         public DateTime LoggedTime { get; set; }
         public string DeviceName { get; set; }

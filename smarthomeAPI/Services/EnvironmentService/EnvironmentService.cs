@@ -19,7 +19,6 @@ namespace smarthomeAPI.Services.EnvironmentService
             _httpContextAccessor = httpContextAccessor;
         }
 
-        // TODO: make this not have to query the sql database "twice"(once to find the parent and one to find if this allready exists
         public async Task<IActionResult> CreateEnvironment(EnvironmentRegisterRequest request)
         {
             // check that the token has a user ID
@@ -28,35 +27,33 @@ namespace smarthomeAPI.Services.EnvironmentService
             {
                 return BadRequest("string is empty");
             }
+
             int userId = Int32.Parse(temp);
-
-            int ParentEnvironmentID;
+            int ParentEnvironmentID = request.ParentEnvironmentId;
             int Depth;
-
             EnvironmentType? parent;
-            //check that the parent environment exists
-            if (request.ParentEnvironmentPath == null)
+
+            //check that user owns the parent environment
+            if (request.ParentEnvironmentId != 0)
             {
-                ParentEnvironmentID = 0;
-                Depth = 0;
-            }
-            else
-            {
-                parent = getEnvFromPath(request.ParentEnvironmentPath, userId);
+                parent = _context.Environments.FirstOrDefault(e =>
+                    e.UserId == userId &&
+                    e.EnvironmentId == ParentEnvironmentID);
                 if (parent == null)
                 {
-                    return BadRequest("parent environment not found");
+                    return BadRequest("Parent environment not found");
                 }
-                ParentEnvironmentID = parent.EnvironmentId;
                 Depth = parent.Depth + 1;
             }
-
+            else {
+                Depth = 0;
+            }
 
             //check that the environment does not allready exist.
             if (_context.Environments.FirstOrDefault(e =>
-            e.ParentEnvironmentID == ParentEnvironmentID &
-            e.EnvironmentName == request.EnvironmentName &
-            e.UserId == userId) is not null)
+                e.ParentEnvironmentID == ParentEnvironmentID &
+                e.EnvironmentName == request.EnvironmentName &
+                e.UserId == userId) is not null)
             {
                 return BadRequest("Environment allready exists");
             };
@@ -70,10 +67,17 @@ namespace smarthomeAPI.Services.EnvironmentService
                 Depth = Depth
             };
 
-            _context.Environments.Add(environment);
+            var env = _context.Environments.Add(environment);
             await _context.SaveChangesAsync();
 
-            return Ok("Environment succesfully created");
+            var return_dict = new
+            {
+                EnvironmentName = request.EnvironmentName,
+                ParentEnvironmentId = ParentEnvironmentID,
+                EnvironmentID = env.Entity.EnvironmentId
+            };
+
+            return Ok(return_dict);
         }
 
         public async Task<IActionResult> DeleteEnvironment(EnvironmentDeleteRequest request)
@@ -84,7 +88,9 @@ namespace smarthomeAPI.Services.EnvironmentService
                 return BadRequest("string is empty");
             }
 
-            EnvironmentType? Environment = _context.Environments.FirstOrDefault(e => e.EnvironmentId == request.EnvironmentId && e.UserId == Int32.Parse(temp));
+            EnvironmentType? Environment = _context.Environments.FirstOrDefault(e => 
+                e.EnvironmentId == request.EnvironmentId && 
+                e.UserId == Int32.Parse(temp));
             if (Environment is null)
             {
                 return BadRequest("Environment does not exist");
@@ -96,7 +102,7 @@ namespace smarthomeAPI.Services.EnvironmentService
             return Ok("Environment succesfully deleted");
         }
 
-        public IActionResult GetEnvToken(string envPath)
+        public IActionResult GetEnvToken(int envID)
         {
             string? claim = GetClaim("UserId");
             if (claim == null)
@@ -105,14 +111,17 @@ namespace smarthomeAPI.Services.EnvironmentService
             }
             int userId = Int32.Parse(claim);
 
-            EnvironmentType? tempEnv = getEnvFromPath(envPath, userId);
+            EnvironmentType? tempEnv = _context.Environments.FirstOrDefault(e =>
+                e.UserId == userId &&
+                e.EnvironmentId == envID);
             if (tempEnv is null)
             {
                 return BadRequest("path invalid");
             }
-            int envId = tempEnv.EnvironmentId;
-            string token = CreateEnvWriteToken(envId.ToString(), userId.ToString());
-            return Ok(token);
+            string token = CreateEnvWriteToken(envID.ToString(), userId.ToString());
+            var returnobj = new { token = token };
+
+            return Ok(returnobj);
         }
 
 
@@ -204,28 +213,6 @@ namespace smarthomeAPI.Services.EnvironmentService
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
 
             return jwt;
-        }
-
-        // TODO: get a more efficient sql query that does not have to make a separate query for each child environment:)
-        private EnvironmentType? getEnvFromPath(string path, int userId)
-        {
-            string[] pathList = path.Split('/');
-            int envId = 0;
-            EnvironmentType? env = default;
-
-            foreach (string name in pathList)
-            {
-                env = _context.Environments.FirstOrDefault(e =>
-                e.EnvironmentName == name &&
-                e.UserId == userId &&
-                e.ParentEnvironmentID == envId);
-                if (env == null)
-                {
-                    return null;
-                }
-                envId = env.EnvironmentId;
-            }
-            return env;
         }
     }
 }

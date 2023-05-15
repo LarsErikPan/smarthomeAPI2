@@ -37,9 +37,9 @@ namespace smarthomeAPI.Controllers
         }
 
         [HttpGet("Token")]
-        public IActionResult GetEnvToken(string envPath)
+        public IActionResult GetEnvToken(int envID)
         {
-            return _envService.GetEnvToken(envPath);
+            return _envService.GetEnvToken(envID);
         }
 
         /*

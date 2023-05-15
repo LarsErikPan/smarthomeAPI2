@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using smarthomeAPI.Services.UserService;
 using smarthomeAPI.Services.EnvironmentService;
+using smarthomeAPI.Services.EmailService;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text;
 
@@ -44,6 +45,7 @@ builder.Services.AddAuthorization(options =>
 });
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEnvironmentService, EnvironmentService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddHttpContextAccessor();
 
 

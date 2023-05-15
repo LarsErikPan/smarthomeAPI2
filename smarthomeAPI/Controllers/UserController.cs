@@ -33,7 +33,7 @@ namespace smarthomeAPI.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("verify")]
+        [HttpGet("verify")]
         public Task<IActionResult> Verify(String Token)
         {
             return _userService.Verify(Token);
@@ -59,7 +59,7 @@ namespace smarthomeAPI.Controllers
             return _userService.DeleteUser(request);
         }
 
-        [HttpPost("upload-rawdatafile")]
+        [HttpPost("upload-rawdata")]
         public IActionResult Upload([FromForm] RawDataWriteRequest request)
         {
             return _userService.Upload(request);

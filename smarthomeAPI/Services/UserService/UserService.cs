@@ -8,22 +8,23 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-
+using smarthomeAPI.Services.EmailService;
+using System.Reflection.Metadata.Ecma335;
 
 namespace smarthomeAPI.Services.UserService
 {
     public class UserService : ControllerBase, IUserService
     {
-
         private readonly DataContext _context;
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public UserService(DataContext context,IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
+        private readonly IEmailService _emailService;
+        public UserService(DataContext context,IConfiguration configuration, IHttpContextAccessor httpContextAccessor, IEmailService emailService)
         {
             _context = context;
             _configuration = configuration;
             _httpContextAccessor = httpContextAccessor;
-
+            _emailService = emailService;
         }
 
         public async Task<IActionResult> Register(UserRegisterRequest request)
@@ -37,18 +38,23 @@ namespace smarthomeAPI.Services.UserService
                 out byte[] passwordHash,
                 out byte[] passwordSalt);
 
+            string verification_token = CreateRandomToken();
             var user = new User
             {
                 Email = request.Email,
                 PasswordHash = passwordHash,
                 PasswordSalt = passwordSalt,
-                VerificationToken = CreateRandomToken()
+                VerificationToken = verification_token
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return Ok("user succesfully created");
+            _emailService.SendEmail(request.Email, verification_token);
+
+            var return_object = new { Registered = true };
+
+            return Ok(return_object);
         }
 
         public async Task<IActionResult> Login(UserLoginRequest request)
@@ -56,21 +62,22 @@ namespace smarthomeAPI.Services.UserService
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
             {
-                return BadRequest("User not found");
+                return BadRequest("Unable to log in.");
             }
 
             if (!VerifyPasswordHash(request.Password, user.PasswordHash, user.PasswordSalt))
             {
-                return BadRequest("Wrong password");
+                return BadRequest("Unable to log in.");
             }
 
             if (user.VerifiedAt == null)
             {
-                return BadRequest("User is not verified.");
+                return BadRequest("Unable to log in.");
             }
 
             string token = CreateToken(user);
-            return Ok(token);
+            var returnobj = new { token = token};
+            return Ok(returnobj);
         }
 
 
